@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidProperty(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.ownerId is string && data.ownerId.size() <= 128
+        && data.title is string && data.title.size() <= 150 && data.title.size() > 0
+        && data.listingType in ['rent', 'sale', 'pg']
+        && data.propertyType in ['apartment', 'house', 'villa', 'pg', 'other']
+        && data.city is string && data.city.size() <= 60
+        && data.locality is string && data.locality.size() <= 100
+        && data.price is number && data.price > 0
+        && data.bedrooms is number && data.bedrooms >= 0
+        && data.furnishing in ['furnished', 'semi-furnished', 'unfurnished']
+        && data.status in ['active', 'inactive', 'archived']
+        && (!('isDemo' in data) || data.isDemo == null || data.isDemo is bool);
+    }
+
+    function isValidInquiry(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.propertyId is string && data.propertyId.size() <= 128
+        && data.propertyOwnerId is string && data.propertyOwnerId.size() <= 128
+        && data.senderName is string && data.senderName.size() <= 100 && data.senderName.size() > 0
+        && data.senderEmail is string && data.senderEmail.size() <= 120 && data.senderEmail.size() > 3
+        && data.senderPhone is string && data.senderPhone.size() <= 25 && data.senderPhone.size() > 4
+        && data.message is string && data.message.size() <= 1500
+        && (!('status' in data) || data.status in ['sent', 'viewed', 'replied', 'pending', 'closed']);
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    match /properties/{propertyId} {
+      allow read: if true;
+      allow create: if isValidProperty(incoming())
+        && (
+          (isSignedIn() && request.auth.uid == incoming().ownerId)
+          || incoming().isDemo == true
+        );
+      allow update: if isSignedIn()
+        && request.auth.uid == existing().ownerId
+        && incoming().ownerId == existing().ownerId
+        && isValidProperty(incoming());
+      allow delete: if isSignedIn()
+        && request.auth.uid == existing().ownerId;
+    }
+
+    match /inquiries/{inquiryId} {
+      allow get: if isSignedIn() && (resource.data.propertyOwnerId == request.auth.uid || resource.data.senderUserId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.propertyOwnerId == request.auth.uid || resource.data.senderUserId == request.auth.uid);
+      allow create: if isValidInquiry(incoming())
+        && (!('senderUserId' in incoming()) || incoming().senderUserId == null || incoming().senderUserId == '' || (isSignedIn() && incoming().senderUserId == request.auth.uid));
+      allow update: if isSignedIn() && (resource.data.propertyOwnerId == request.auth.uid || resource.data.senderUserId == request.auth.uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['sent', 'viewed', 'replied', 'pending', 'closed'];
+      allow delete: if false;
+    }
+
+    function isValidSavedProperty(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.propertyId is string && data.propertyId.size() <= 128;
+    }
+
+    match /saved_properties/{savedId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.auth.uid == incoming().userId
+        && isValidSavedProperty(incoming());
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}

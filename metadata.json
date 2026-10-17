@@ -1,0 +1,6 @@
+{
+  "name": "Staywise",
+  "description": "Staywise means Paywise! Indian real estate platform for rental homes, properties for sale, and PG accommodation with zero brokerage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

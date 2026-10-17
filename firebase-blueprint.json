@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "Property": {
+      "title": "Property",
+      "description": "A real estate listing for rent, sale, or PG",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the property" },
+        "ownerId": { "type": "string", "description": "UID of the owner user who posted the property" },
+        "ownerName": { "type": "string", "description": "Display name of the owner" },
+        "ownerEmail": { "type": "string", "description": "Contact email of owner" },
+        "ownerPhone": { "type": "string", "description": "Contact phone of owner if provided" },
+        "showContactDirectly": { "type": "boolean", "description": "Whether owner agrees to publish phone directly" },
+        "title": { "type": "string", "description": "Title headline of the listing", "maxLength": 150 },
+        "description": { "type": "string", "description": "Full description of property", "maxLength": 5000 },
+        "listingType": { "type": "string", "enum": ["rent", "sale", "pg"], "description": "Listing type" },
+        "propertyType": { "type": "string", "enum": ["apartment", "house", "villa", "pg", "other"], "description": "Subtype of property" },
+        "city": { "type": "string", "description": "City name e.g. Pune, Mumbai, Bengaluru" },
+        "locality": { "type": "string", "description": "Locality or neighborhood name", "maxLength": 100 },
+        "publicAddress": { "type": "string", "description": "Address shown publicly or landmark", "maxLength": 200 },
+        "price": { "type": "number", "description": "Monthly rent in INR or total sale price in INR" },
+        "securityDeposit": { "type": "number", "description": "Security deposit in INR" },
+        "maintenanceCharges": { "type": "number", "description": "Monthly maintenance charges in INR" },
+        "bedrooms": { "type": "number", "description": "Number of bedrooms / BHK count" },
+        "bathrooms": { "type": "number", "description": "Number of bathrooms" },
+        "areaSqFt": { "type": "number", "description": "Carpet or built-up area in sq ft" },
+        "furnishing": { "type": "string", "enum": ["furnished", "semi-furnished", "unfurnished"], "description": "Furnishing condition" },
+        "amenities": { "type": "array", "description": "List of available amenities" },
+        "imageUrls": { "type": "array", "description": "Image URLs for property photo gallery" },
+        "availableFrom": { "type": "string", "description": "Available from date string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "archived"], "description": "Listing status" },
+        "isDemo": { "type": "boolean", "description": "True if this is a sample/demo listing" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["id", "ownerId", "title", "listingType", "propertyType", "city", "locality", "price", "bedrooms", "furnishing", "status"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "A direct contact message or lead sent to the property owner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of inquiry" },
+        "propertyId": { "type": "string", "description": "ID of the property being inquired about" },
+        "propertyTitle": { "type": "string", "description": "Title of the property for reference" },
+        "propertyOwnerId": { "type": "string", "description": "UID of the owner who should receive the inquiry" },
+        "senderUserId": { "type": "string", "description": "UID of the logged-in user if authenticated" },
+        "senderName": { "type": "string", "description": "Name of the prospective tenant or buyer", "maxLength": 100 },
+        "senderEmail": { "type": "string", "description": "Email address of the sender", "maxLength": 120 },
+        "senderPhone": { "type": "string", "description": "Phone number of the sender", "maxLength": 20 },
+        "message": { "type": "string", "description": "Message content", "maxLength": 1500 },
+        "status": { "type": "string", "enum": ["sent", "viewed", "replied", "pending", "closed"], "description": "Current state of inquiry" },
+        "createdAt": { "type": "string", "description": "Timestamp when inquiry was created" }
+      },
+      "required": ["id", "propertyId", "propertyOwnerId", "senderName", "senderEmail", "senderPhone", "message"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Basic user profile details stored under users/{userId}",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "User UID matching auth.uid" },
+        "displayName": { "type": "string", "description": "User display name", "maxLength": 100 },
+        "email": { "type": "string", "description": "User email address", "maxLength": 120 },
+        "phone": { "type": "string", "description": "User contact phone", "maxLength": 20 },
+        "createdAt": { "type": "string", "description": "Account registration date" }
+      },
+      "required": ["id", "email"]
+    },
+    "SavedProperty": {
+      "title": "SavedProperty",
+      "description": "User saved or wishlisted property listing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of saved entry, e.g. userId_propertyId" },
+        "userId": { "type": "string", "description": "UID of the user who saved the property" },
+        "propertyId": { "type": "string", "description": "ID of the saved property" },
+        "createdAt": { "type": "string", "description": "Timestamp when property was saved" }
+      },
+      "required": ["id", "userId", "propertyId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/properties/{propertyId}": {
+      "schema": "Property",
+      "description": "Collection of all real estate listings for rent, sale, and PG"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "Inquiry",
+      "description": "Contact inquiries sent by users to property owners"
+    },
+    "/saved_properties/{savedId}": {
+      "schema": "SavedProperty",
+      "description": "Collection of properties favorited/wishlisted by users"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account profiles"
+    }
+  }
+}
